@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
+//function for allocating memory on the heap
 float *malloc_matrix(int R, int C){
   //allocation memory R*C to the heap and return the pointer 
   float *m = malloc(R* C * sizeof(float));
@@ -11,13 +11,14 @@ float *malloc_matrix(int R, int C){
   return m;
 }
 
+//function for setting the value in a matrix
 int set(float *m, int C, int r, int c, float value){
 
     int idx = r * C + c;
     m[idx] = value;
   return idx;
 }
-
+//function for getting the value from index 
 float get(float *m, int C, int r, int c){
 
   return m[r*C+c];
@@ -31,9 +32,10 @@ void fill_sequential(float *m, int R, int C){
   }
 }
 
+//function for multiplying 2D matrics
 float *matmul(float *A, float *B, int M, int K, int N){
     
-    float *result = malloc_matrix(M,N);
+    float *result = malloc(M*N*sizeof(float));
 
     for(int i=0; i<M; i++){
       for(int j=0; j<N; j++){
@@ -49,6 +51,62 @@ float *matmul(float *A, float *B, int M, int K, int N){
     return result;
 }
 
+float *matrix_addition(float *A, float *B, int M, int N){
+  
+  //allocating new memory for the the resulting matrix 
+  float *result = malloc(M*N*sizeof(float));
+  
+  //looping over and adding elementwise
+  for(int i=0;i<M*N; i++){
+    result[i] = A[i] + B[i];
+  }
+  return result;
+}
+
+//scalar multiply every element with a number
+
+float *scalar_multiply(float *m, int M, int N, float value){
+    
+    float *result = malloc(M*N*sizeof(float));
+    for(int i=0; i< M*N; i++){
+       result[i] = m[i] * value; 
+    }
+    return result;
+
+}
+
+float *transpose(float *m, int M, int N){
+
+  float *result = malloc(M*N*sizeof(float));
+  //transposr M by N to N by M 
+  for(int i=0; i<M; i++){
+    for(int j=0; j<N; j++){
+      result[j*M+i] = m[i*N+j];
+    }
+  }
+  return result;
+}
+
+float *identity(int N){
+
+  float *result = calloc(N*N,sizeof(float));
+  for(int i=0; i<N; i++){
+     // 00 , 11, 22, 33 i +i*N
+     result[i+i*N] = 1; 
+  } 
+  return result;
+}
+
+void print_matrix(float *m, int M, int N){
+
+  for(int i=0; i<M; i++){
+   for(int j=0; j<N; j++){
+     printf("%f  ", m[i*N+j]);
+   } 
+    printf("\n");
+
+  }
+}
 //main entry point function 
 int main(){
   //number of rows and columns defined 
@@ -79,8 +137,23 @@ int main(){
   int N = 3;
   float *result = matmul(m, n, M, K, N );
   printf("result after matrix multiplication: %f\n", get(result,N,1,1)); // should print 54.00
+ 
+  // matrix addition testing
+  float *added_result = matrix_addition(m,n,R,C);  
+  printf("added matrix result: el1: %f | el2: %f\n", get(added_result,N,0,0),get(added_result,N,0,1));
+
+  //scalar multiplication of matrix
+  float *scalar_multiplied = scalar_multiply(m, R,C, 10);
+printf("scalar multiply: %f\n", get(scalar_multiplied,N,0,1)); //should print 10.00
+  float *transposed = transpose(m, R, C);
+  printf("transposed element check: %f\n", get(transposed,R, 1, 2)); // should print 7.00
+  
+  //identity matrix 
+  float *iden = identity(3);
+  print_matrix(scalar_multiplied,R,C);
   
   //freeing the memory 
-  free(m); free(n); free(result);
+  free(m); free(n); free(result); free(added_result); free(scalar_multiplied); free(transposed); free(iden);
+    
   return 0;
 }
