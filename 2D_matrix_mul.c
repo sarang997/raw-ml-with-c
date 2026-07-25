@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "2D_matrix_mul.h"
 
 //function for allocating memory on the heap
-float *malloc_matrix(int R, int C){
+float *create_matrix(int R, int C){
   //allocation memory R*C to the heap and return the pointer 
   float *m = malloc(R* C * sizeof(float));
   for(int i=0; i< R*C; i++){
@@ -96,7 +97,17 @@ float *identity(int N){
   } 
   return result;
 }
-
+float *sum_along_rows(float *m, int R, int C){
+  float *output = malloc(R*sizeof(float)); 
+  for(int i=0; i<R; i++){
+    float sum =  0; 
+    for(int j=0; j<C; j++){
+      sum+= m[i*C + j];
+    }
+    output[i] = sum;
+  }
+  return output;
+}
 void print_matrix(float *m, int M, int N){
 
   for(int i=0; i<M; i++){
@@ -107,53 +118,4 @@ void print_matrix(float *m, int M, int N){
 
   }
 }
-//main entry point function 
-int main(){
-  //number of rows and columns defined 
-  int R = 3;
-  int C = 3; 
 
-  //function for allication memory take R and C input 
-  float *m = malloc_matrix(R,C);
-  float *n = malloc_matrix(R,C);
-
-  //set function to set the value of the matrix 
-  int r = 1;
-  int c = 1;
-  float value = 2.0;
-  int set_index = set(m, C, r,c, value);
-  printf("index of set value is: %d\n", set_index);
-  
-  //get function
-  float get_value = get(m, C, 0, c); 
-  
-  //filling seqential values to the array 
-  fill_sequential(m, R, C);
-  fill_sequential(n,R,C);
-
-  //function for multiplying 2 matrix -> M*K and K*N matrix
-  int M = 3; 
-  int K = 3; 
-  int N = 3;
-  float *result = matmul(m, n, M, K, N );
-  printf("result after matrix multiplication: %f\n", get(result,N,1,1)); // should print 54.00
- 
-  // matrix addition testing
-  float *added_result = matrix_addition(m,n,R,C);  
-  printf("added matrix result: el1: %f | el2: %f\n", get(added_result,N,0,0),get(added_result,N,0,1));
-
-  //scalar multiplication of matrix
-  float *scalar_multiplied = scalar_multiply(m, R,C, 10);
-printf("scalar multiply: %f\n", get(scalar_multiplied,N,0,1)); //should print 10.00
-  float *transposed = transpose(m, R, C);
-  printf("transposed element check: %f\n", get(transposed,R, 1, 2)); // should print 7.00
-  
-  //identity matrix 
-  float *iden = identity(3);
-  print_matrix(scalar_multiplied,R,C);
-  
-  //freeing the memory 
-  free(m); free(n); free(result); free(added_result); free(scalar_multiplied); free(transposed); free(iden);
-    
-  return 0;
-}
