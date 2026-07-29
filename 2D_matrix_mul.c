@@ -33,7 +33,7 @@ void fill_sequential(float *m, int R, int C){
   }
 }
 
-//function for multiplying 2D matrics
+//function for multiplying 2D matrics- A -> M K B-> K N
 float *matmul(float *A, float *B, int M, int K, int N){
     
     float *result = malloc(M*N*sizeof(float));
@@ -75,7 +75,7 @@ float *scalar_multiply(float *m, int M, int N, float value){
     return result;
 
 }
-
+//M N matrix is transposed to N M and pointer is returned
 float *transpose(float *m, int M, int N){
 
   float *result = malloc(M*N*sizeof(float));

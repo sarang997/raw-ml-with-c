@@ -36,6 +36,7 @@ float cross_entropy_loss(float *softmax_output, int R, int C, int *targets){
     }
     return total_loss/R;
 }
+
 int main(){ 
   int R = 3;
   int C = 5;
