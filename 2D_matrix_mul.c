@@ -33,6 +33,13 @@ void fill_sequential(float *m, int R, int C){
   }
 }
 
+void fill_matrix(float *m, int R, int C, float value){
+   
+  for(int i=0; i< R*C; i++){
+    m[i] = value;
+  }
+}
+
 //function for multiplying 2D matrics- A -> M K B-> K N
 float *matmul(float *A, float *B, int M, int K, int N){
     
@@ -52,6 +59,7 @@ float *matmul(float *A, float *B, int M, int K, int N){
     return result;
 }
 
+//function for matrix addition. input-> the input matrix is A and B 
 float *matrix_addition(float *A, float *B, int M, int N){
   
   //allocating new memory for the the resulting matrix 
@@ -65,7 +73,6 @@ float *matrix_addition(float *A, float *B, int M, int N){
 }
 
 //scalar multiply every element with a number
-
 float *scalar_multiply(float *m, int M, int N, float value){
     
     float *result = malloc(M*N*sizeof(float));
