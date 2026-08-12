@@ -102,11 +102,34 @@ Matrix matrix_add(Matrix *m, Matrix *n){
 
   return result; 
 }
+
+Matrix matrix_mul(Matrix *m, Matrix *n){
+  Matrix result; 
+  result.data = NULL;
+  result.R = 0;
+  result.C = 0;
+  if(m->data == NULL || n->data == NULL || m->R <0 || m->C <0 || n->R <0 || n->C <0){
+    return result;
+  }
+  
+  //inner dimensions should match for a valid multiplcation
+  if(m->C != n->R){
+    return result;
+  }
+
+  result.data = matmul(m->data, n->data, m->R, m->C, n->C);
+  result.R = m->R;
+  result.C = n->C;
+  return result;
+}
+
 int main(){ 
+
   int R = 2;
   int C = 3;
   Matrix m = matrix_create(R,C);
   Matrix n = matrix_create(R,C);
+  Matrix r = matrix_create(C,R);
   //set value = 2.0 at 1,1 
   matrix_set(&m, 1,1, 2.0);
   float value;
@@ -120,6 +143,7 @@ int main(){
   }
   matrix_fill(&m, 3.0);
   matrix_fill(&n, 2.0);
+  matrix_fill(&r, 1.0);
 
   printf("matrix m: \n");
   matrix_print(m);
@@ -129,7 +153,11 @@ int main(){
   printf("addition m+n:\n");
   Matrix result = matrix_add(&m, &n);
   matrix_print(result);
+  //matrix multiplcation 
+  Matrix result_mul = matrix_mul(&m, &r);
+  printf("multiplication m*r:\n");
 
+  matrix_print(result_mul);
   matrix_free(&m);
   matrix_free(&n);
 
