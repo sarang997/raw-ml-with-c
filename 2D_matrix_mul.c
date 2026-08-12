@@ -61,7 +61,9 @@ float *matmul(float *A, float *B, int M, int K, int N){
 
 //function for matrix addition. input-> the input matrix is A and B 
 float *matrix_addition(float *A, float *B, int M, int N){
-  
+  if(A == NULL || B ==NULL){
+    return NULL;
+  }  
   //allocating new memory for the the resulting matrix 
   float *result = malloc(M*N*sizeof(float));
   

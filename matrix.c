@@ -79,11 +79,34 @@ int matrix_fill(Matrix *m, float value){
    fill_matrix(m->data, m->R, m->C, value);  
     return 1;
 }
+
+Matrix matrix_add(Matrix *m, Matrix *n){
+  Matrix result; 
+  result.data = NULL;
+  result.R = 0;
+  result.C = 0;
+
+  //check if data is not NULL R,C <0 
+  if(m->data ==NULL || n->data ==NULL || m->R <0 || m->C <0 || n->R < 0 || n->C <0){
+    return result;
+  }
+  //check if the r,c same for valid addition 
+  if(m->R != n->R || m->C !=n->C){
+    return result;
+  }
+  //call the add matrix 
+
+ result.data = matrix_addition(m->data, n->data, m->R, m->C);
+ result.R = m->R;
+ result.C = m->C;
+
+  return result; 
+}
 int main(){ 
   int R = 2;
   int C = 3;
   Matrix m = matrix_create(R,C);
-  matrix_print(m);
+  Matrix n = matrix_create(R,C);
   //set value = 2.0 at 1,1 
   matrix_set(&m, 1,1, 2.0);
   float value;
@@ -96,8 +119,19 @@ int main(){
      
   }
   matrix_fill(&m, 3.0);
+  matrix_fill(&n, 2.0);
+
+  printf("matrix m: \n");
   matrix_print(m);
+  printf("matrix n:\n");
+  matrix_print(n);
+
+  printf("addition m+n:\n");
+  Matrix result = matrix_add(&m, &n);
+  matrix_print(result);
+
   matrix_free(&m);
+  matrix_free(&n);
 
   return 0;
 }
