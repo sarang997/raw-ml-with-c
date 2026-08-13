@@ -74,6 +74,21 @@ float *matrix_addition(float *A, float *B, int M, int N){
   return result;
 }
 
+//function for matrix subtraction. input-> the input matrix is A and B 
+float *matrix_substraction(float *A, float *B, int M, int N){
+  if(A == NULL || B ==NULL){
+    return NULL;
+  }  
+  //allocating new memory for the the resulting matrix 
+  float *result = malloc(M*N*sizeof(float));
+  
+  //looping over and adding elementwise
+  for(int i=0;i<M*N; i++){
+    result[i] = A[i] - B[i];
+  }
+  return result;
+}
+
 //scalar multiply every element with a number
 float *scalar_multiply(float *m, int M, int N, float value){
     
@@ -128,3 +143,15 @@ void print_matrix(float *m, int M, int N){
   }
 }
 
+float *elementwise_mul(float *m, float *n, int M, int N){
+    float *result = malloc(M*N*sizeof(float));
+
+    for(int i=0; i<M;i++){
+      for(int j=0; j<N; j++){
+          result[i*N +j] = m[i*N+j] * n[i*N+j];
+      } 
+    }
+    return result;
+}
+//todo -> elementwise multiplcation 
+  //once done create the wrapper function for it in the matrix.c useful for backprop later 

@@ -87,7 +87,7 @@ Matrix matrix_add(Matrix *m, Matrix *n){
   result.C = 0;
 
   //check if data is not NULL R,C <0 
-  if(m->data ==NULL || n->data ==NULL || m->R <0 || m->C <0 || n->R < 0 || n->C <0){
+  if(m->data ==NULL || n->data ==NULL || m->R <=0 || m->C <=0 || n->R <= 0 || n->C <=0){
     return result;
   }
   //check if the r,c same for valid addition 
@@ -103,14 +103,38 @@ Matrix matrix_add(Matrix *m, Matrix *n){
   return result; 
 }
 
+Matrix matrix_sub(Matrix *m, Matrix *n){
+  Matrix result; 
+  result.data = NULL;
+  result.R = 0;
+  result.C = 0;
+
+  //check if data is not NULL R,C <0 
+  if(m->data ==NULL || n->data ==NULL || m->R <=0 || m->C <=0 || n->R <= 0 || n->C <=0){
+    return result;
+  }
+  //check if the r,c same for valid addition 
+  if(m->R != n->R || m->C !=n->C){
+    return result;
+  }
+
+  //call the substraction function 
+  result.data = matrix_substraction(m->data, n->data, m->R, m->C);
+  result.R = m->R;
+  result.C = m->C;
+
+  return result; 
+}
+
 Matrix matrix_mul(Matrix *m, Matrix *n){
   Matrix result; 
   result.data = NULL;
   result.R = 0;
   result.C = 0;
-  if(m->data == NULL || n->data == NULL || m->R <0 || m->C <0 || n->R <0 || n->C <0){
+  if(m->data == NULL || n->data == NULL || m->R <=0 || m->C <=0 || n->R <=0 || n->C <=0){
     return result;
   }
+
   
   //inner dimensions should match for a valid multiplcation
   if(m->C != n->R){
@@ -120,6 +144,62 @@ Matrix matrix_mul(Matrix *m, Matrix *n){
   result.data = matmul(m->data, n->data, m->R, m->C, n->C);
   result.R = m->R;
   result.C = n->C;
+  return result;
+}
+
+//matrix transpose
+Matrix matrix_transpose(Matrix *m){
+  Matrix result;
+  result.data = NULL;
+  result.R = 0;
+  result.C = 0;
+  if(m->data == NULL || m->R <=0 || m->C <=0){
+    return result;
+  }
+  result.data = transpose(m->data, m->R, m->C);
+  result.R = m->C;
+  result.C = m->R;
+
+  return result;
+}
+
+//scalar multiplication wrapper for a 2D matrix
+Matrix matrix_scalar_mul(Matrix *m, float value){
+
+  Matrix result;
+  result.data = NULL;
+  result.R = 0;
+  result.C = 0; 
+  if(m->data == NULL || m->R <=0 || m->C <=0){
+     return result; 
+  }
+
+  result.data = scalar_multiply(m->data, m->R, m->C, value);
+  result.R = m->R;
+  result.C = m->C;
+
+  return result;
+}
+
+//elementwise multiplication 
+Matrix matrix_elementwise_mul(Matrix *m, Matrix *n){
+  Matrix result;
+  result.data = NULL;
+  result.R = 0;
+  result.C = 0;
+
+  if(m->data ==NULL || n->data == NULL){
+    return result;
+  }
+  if(m->R != n->R || m->C != n->C){
+    return result;
+  }
+  //TODO complete the validation checks in this.. 
+
+  result.data = elementwise_mul(m->data, n->data, m->R,m->C);
+  result.R = m->R;
+  result.C = m->C;
+
   return result;
 }
 
@@ -156,10 +236,30 @@ int main(){
   //matrix multiplcation 
   Matrix result_mul = matrix_mul(&m, &r);
   printf("multiplication m*r:\n");
+  
+  //transpose
+  printf("transpose:\n");
+  Matrix transposed = matrix_transpose(&r);
 
   matrix_print(result_mul);
+  
+  printf("before transpose:\n");
+  matrix_print(r);
+  printf("after transpose:\n");
+  matrix_print(transposed);
+
+  //scalar mul matrix
+  float  scalar = 10.0;
+  Matrix scalar_mul_result = matrix_scalar_mul(&r,scalar);
+  matrix_print(scalar_mul_result);
+  
   matrix_free(&m);
   matrix_free(&n);
+  matrix_free(&r);
+  matrix_free(&scalar_mul_result);
+  matrix_free(&transposed);
+  matrix_free(&result_mul);
+  matrix_free(&result);
 
   return 0;
 }
