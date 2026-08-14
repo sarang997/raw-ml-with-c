@@ -39,7 +39,7 @@ Matrix matrix_create(int R, int C){
 
   return m1;
 }
-
+//function for printing the matrix
 void matrix_print(Matrix m){
    print_matrix(m.data, m.R, m.C);
 }
@@ -83,9 +83,7 @@ int matrix_get(Matrix *m, int r, int c, float *value){
 
 //fill the matrix with a value
 int matrix_fill(Matrix *m, float value){
-  
   if(!matrix_is_valid(m)){
-  
      return 0; 
     }
 
@@ -218,7 +216,26 @@ Matrix matrix_elementwise_mul(Matrix *m, Matrix *n){
 }
 //helper function for checking if Matrix struct is valid
 
+Matrix matrix_copy(Matrix *m){
+  Matrix m_copy; 
+  m_copy.data = NULL;
+  m_copy.R = 0;
+  m_copy.C = 0;
+  if(!matrix_is_valid(m)){
+    return m_copy;
+  }
+  m_copy = matrix_create(m->R, m->C);
+  //copy the data from m to n
+  for(int i=0; i<m->R;i++){
+    for(int j=0; j<m->C;j++){
+      m_copy.data[i*m->C + j] = m->data[i*m->C + j];
+    }
+  }
+ m_copy.R = m->R;
+ m_copy.C = m->C;
 
+ return m_copy;
+}
 
 int main(){ 
   //testing the functions
@@ -269,7 +286,11 @@ int main(){
   float  scalar = 10.0;
   Matrix scalar_mul_result = matrix_scalar_mul(&r,scalar);
   matrix_print(scalar_mul_result);
-  
+  //copying the matrix
+  Matrix r_copy = matrix_copy(&r);
+  printf("pointer of r: %p: \n", &r);
+  printf("pointer of r_copy: %p: \n", &r_copy); // should print different pointer adresses
+  //freeing the matrics 
   matrix_free(&m);
   matrix_free(&n);
   matrix_free(&r);
@@ -277,6 +298,6 @@ int main(){
   matrix_free(&transposed);
   matrix_free(&result_mul);
   matrix_free(&result);
-
+  
   return 0;
 }
