@@ -11,6 +11,15 @@ typedef struct{
 
 } Matrix;
 
+//helper function for checking validity
+int matrix_is_valid(Matrix *m){
+  if(m!=NULL && m->data != NULL && m->R > 0 && m->C >0){
+    return 1;
+  }
+  return 0;
+}
+
+//create a matrix
 Matrix matrix_create(int R, int C){
 
   Matrix m1;
@@ -49,7 +58,7 @@ int matrix_free(Matrix *m){
 //int set(float *m, int C, int r, int c, float value);
 int matrix_set(Matrix *m, int r, int c, float value){
 
-  if(m == NULL || m->data==NULL || r <0 || c<0){
+  if(!matrix_is_valid(m) || r <0 || c<0){
     return 0; 
   }
   if(r >= m->R || c >= m->C){
@@ -62,7 +71,7 @@ int matrix_set(Matrix *m, int r, int c, float value){
 }
 //pass the matrix, r,c and get the value at that position from the struct
 int matrix_get(Matrix *m, int r, int c, float *value){
-  if(m == NULL || m->data == NULL || r<0 || c<0 || value ==NULL){
+  if(!matrix_is_valid(m) || r<0 || c<0 || value ==NULL){
     return 0;
   }
   if(r >=m->R || c >=m->C){
@@ -74,8 +83,9 @@ int matrix_get(Matrix *m, int r, int c, float *value){
 
 //fill the matrix with a value
 int matrix_fill(Matrix *m, float value){
-    if(m ==NULL || m->data == NULL){
-
+  
+  if(!matrix_is_valid(m)){
+  
      return 0; 
     }
 
@@ -90,7 +100,7 @@ Matrix matrix_add(Matrix *m, Matrix *n){
   result.C = 0;
 
   //check if data is not NULL R,C <0 
-  if(m==NULL || n== NULL || m->data ==NULL || n->data ==NULL || m->R <=0 || m->C <=0 || n->R <= 0 || n->C <=0){
+  if(!matrix_is_valid(m) || !matrix_is_valid(n)){
     return result;
   }
   //check if the r,c same for valid addition 
@@ -113,7 +123,7 @@ Matrix matrix_sub(Matrix *m, Matrix *n){
   result.C = 0;
 
   //check if data is not NULL R,C <0 
-  if(m ==NULL || n==NULL || m->data ==NULL || n->data ==NULL || m->R <=0 || m->C <=0 || n->R <= 0 || n->C <=0){
+  if(!matrix_is_valid(m) || !matrix_is_valid(n)){
     return result;
   }
   //check if the r,c same for valid addition 
@@ -134,7 +144,7 @@ Matrix matrix_mul(Matrix *m, Matrix *n){
   result.data = NULL;
   result.R = 0;
   result.C = 0;
-  if(m==NULL || n==NULL || m->data == NULL || n->data == NULL || m->R <=0 || m->C <=0 || n->R <=0 || n->C <=0){
+  if(!matrix_is_valid(m) || !matrix_is_valid(n)){
     return result;
   }
   
@@ -155,7 +165,7 @@ Matrix matrix_transpose(Matrix *m){
   result.data = NULL;
   result.R = 0;
   result.C = 0;
-  if(m==NULL || m->data == NULL || m->R <=0 || m->C <=0){
+  if(!matrix_is_valid(m)){
     return result;
   }
   result.data = transpose(m->data, m->R, m->C);
@@ -173,7 +183,7 @@ Matrix matrix_scalar_mul(Matrix *m, float value){
   result.R = 0;
   result.C = 0; 
 
-  if(m==NULL || m->data == NULL || m->R <=0 || m->C <=0){
+  if(!matrix_is_valid(m)){
      return result; 
   }
 
@@ -190,8 +200,9 @@ Matrix matrix_elementwise_mul(Matrix *m, Matrix *n){
   result.data = NULL;
   result.R = 0;
   result.C = 0;
+  
 
-  if(m==NULL ||NULL || m->data ==NULL || n->data == NULL){
+  if(!matrix_is_valid(m) || !matrix_is_valid(n)){
     return result;
   }
   if(m->R != n->R || m->C != n->C){
@@ -207,14 +218,10 @@ Matrix matrix_elementwise_mul(Matrix *m, Matrix *n){
 }
 //helper function for checking if Matrix struct is valid
 
-int matrix_is_valid(Matrix *m){
-  if(m!=NULL || m->data != NULL || m->R > 0 || m->C >0){
-    return 1;
-  }
-  return 0;
-}
-int main(){ 
 
+
+int main(){ 
+  //testing the functions
   int R = 2;
   int C = 3;
   Matrix m = matrix_create(R,C);
