@@ -6,6 +6,9 @@
 float *create_matrix(int R, int C){
   //allocation memory R*C to the heap and return the pointer 
   float *m = malloc(R* C * sizeof(float));
+  if(m==NULL){
+    return NULL;
+  }
   for(int i=0; i< R*C; i++){
     m[i] = 0;
   }

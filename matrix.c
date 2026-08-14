@@ -35,12 +35,15 @@ void matrix_print(Matrix m){
    print_matrix(m.data, m.R, m.C);
 }
 
-void matrix_free(Matrix *m){
-
+int matrix_free(Matrix *m){
+  if(m==NULL){
+    return 0; 
+  }
   free(m->data);
   m->R = 0;
   m->C = 0;
   m->data = NULL;
+  return 0;
 }
 
 //int set(float *m, int C, int r, int c, float value);
@@ -87,15 +90,15 @@ Matrix matrix_add(Matrix *m, Matrix *n){
   result.C = 0;
 
   //check if data is not NULL R,C <0 
-  if(m->data ==NULL || n->data ==NULL || m->R <=0 || m->C <=0 || n->R <= 0 || n->C <=0){
+  if(m==NULL || n== NULL || m->data ==NULL || n->data ==NULL || m->R <=0 || m->C <=0 || n->R <= 0 || n->C <=0){
     return result;
   }
   //check if the r,c same for valid addition 
   if(m->R != n->R || m->C !=n->C){
     return result;
   }
-  //call the add matrix 
 
+ //call the add matrix 
  result.data = matrix_addition(m->data, n->data, m->R, m->C);
  result.R = m->R;
  result.C = m->C;
@@ -110,7 +113,7 @@ Matrix matrix_sub(Matrix *m, Matrix *n){
   result.C = 0;
 
   //check if data is not NULL R,C <0 
-  if(m->data ==NULL || n->data ==NULL || m->R <=0 || m->C <=0 || n->R <= 0 || n->C <=0){
+  if(m ==NULL || n==NULL || m->data ==NULL || n->data ==NULL || m->R <=0 || m->C <=0 || n->R <= 0 || n->C <=0){
     return result;
   }
   //check if the r,c same for valid addition 
@@ -131,10 +134,9 @@ Matrix matrix_mul(Matrix *m, Matrix *n){
   result.data = NULL;
   result.R = 0;
   result.C = 0;
-  if(m->data == NULL || n->data == NULL || m->R <=0 || m->C <=0 || n->R <=0 || n->C <=0){
+  if(m==NULL || n==NULL || m->data == NULL || n->data == NULL || m->R <=0 || m->C <=0 || n->R <=0 || n->C <=0){
     return result;
   }
-
   
   //inner dimensions should match for a valid multiplcation
   if(m->C != n->R){
@@ -153,7 +155,7 @@ Matrix matrix_transpose(Matrix *m){
   result.data = NULL;
   result.R = 0;
   result.C = 0;
-  if(m->data == NULL || m->R <=0 || m->C <=0){
+  if(m==NULL || m->data == NULL || m->R <=0 || m->C <=0){
     return result;
   }
   result.data = transpose(m->data, m->R, m->C);
@@ -170,7 +172,8 @@ Matrix matrix_scalar_mul(Matrix *m, float value){
   result.data = NULL;
   result.R = 0;
   result.C = 0; 
-  if(m->data == NULL || m->R <=0 || m->C <=0){
+
+  if(m==NULL || m->data == NULL || m->R <=0 || m->C <=0){
      return result; 
   }
 
@@ -188,7 +191,7 @@ Matrix matrix_elementwise_mul(Matrix *m, Matrix *n){
   result.R = 0;
   result.C = 0;
 
-  if(m->data ==NULL || n->data == NULL){
+  if(m==NULL ||NULL || m->data ==NULL || n->data == NULL){
     return result;
   }
   if(m->R != n->R || m->C != n->C){
@@ -202,7 +205,14 @@ Matrix matrix_elementwise_mul(Matrix *m, Matrix *n){
 
   return result;
 }
+//helper function for checking if Matrix struct is valid
 
+int matrix_is_valid(Matrix *m){
+  if(m!=NULL || m->data != NULL || m->R > 0 || m->C >0){
+    return 1;
+  }
+  return 0;
+}
 int main(){ 
 
   int R = 2;
