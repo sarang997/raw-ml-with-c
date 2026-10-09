@@ -20,7 +20,7 @@ typedef struct{
 
 //Utils Functions required for forward pass
 int Matrix_addition(Matrix *A, Matrix *B, Matrix *out){
-  //checks
+ //checks
   if(A==NULL || B==NULL || out==NULL) return 0;
   if(A->rows != B->rows || A->cols !=B->cols) return 0;
 
@@ -43,16 +43,22 @@ int Matrix_transpose(Matrix *A, Matrix *out){
     }
 
   }
+  //assign the rows and the columns
+  out->rows = A->cols;
+  out->cols = A->rows;
   return 1;
 }
 
 int Matrix_mul(Matrix *A, Matrix *B, Matrix *out){
+    if(A->cols != B->rows) return 0; 
     
     for(int r; r<A->rows; r++){
       for(int c; c<A->cols; c++){
          //out->data[] = A->data[r*A->rows+c] * B->data[c*B->cols_r];
       }
     }
+    out->rows = A->rows;
+    out->cols = B->cols;
   return 1;
 }
 
@@ -132,6 +138,7 @@ int create_Q_K_V_weights(Q_K_V_weights *weights, int d_model){
   return 1;
 }
 
+//Allocate heap memory
 int Matrix_alloc(Matrix *M, int rows, int cols){
 
   if(M==NULL) return 0;
@@ -142,20 +149,97 @@ int Matrix_alloc(Matrix *M, int rows, int cols){
   return 1;
 }
 
-float *single_head_attention_forward(Matrix *input, Q_K_V_weights *weights, int d_model){
-  Matrix Q,K,V;
-  //Matrix_alloc(&Q,);
-  Matrix_mul(input, &weights->Q_W, &Q);
- //Q = input * Q_W, K = input * Q_K, V = input * Q_V
+int Matrix_print(Matrix *M){
+
+  for(int i=0; i<M->rows; i++){
+    for(int j=0; j<M->cols; j++){
+      printf("%f ", M->data[i*M->cols+j]);
+    }
+    printf("\n");
+  }
+  return 1; 
+}
+
+//MATRIX FREE
+void Matrix_free(Matrix *M){
+  if(M!=NULL){
+    free(M->data);
+    M->data = NULL; //good practice to set it to NULL 
+  }
+  M->rows=0;
+  M->cols=0;
+  }
+
+//ATTENTION FORWARD
+Matrix *single_head_attention_forward(Matrix *input, int d_model, int residual_connection, Matrix *out){
+  
+  int d_k = input->cols;
+  //create weights for Q, K, V
+  Matrix Q_W, K_W, V_W;
+  Matrix_create_random(&Q_W, d_model, d_model);
+  Matrix_create_random(&K_W, d_model, d_model);
+  Matrix_create_random(&V_W, d_model, d_model);
+
+  //create Q,K,V and allocate space
+  Matrix Q,K,V, K_transpose, scores, soft_scores;
+  Matrix_alloc(&Q, d_k, d_k);
+  Matrix_alloc(&K, d_k, d_k);
+  Matrix_alloc(&V, d_k, d_k);
+
+  //calculate Q,K,V
+  Matrix_mul(input, &Q_W, &Q);
+  Matrix_mul(input, &K_W, &K);
+  Matrix_mul(input, &V_W, &V);
+
  //scores = Q.K^T
- //soft_scores = softmax(scores)
- //soft_scores.V -> gives actual input shape
- //return this new Matrix pointer
- return NULL;
+  Matrix_alloc(&K_transpose, K.rows, K.cols);
+  Matrix_transpose(&K, &K_transpose);
+
+  Matrix_alloc(&scores, Q.rows, K_transpose.cols);
+  Matrix_mul(&Q, &K_transpose, &scores);
+
+ //softmax
+ Matrix_alloc(&soft_scores, scores.rows, scores.cols);
+ Matrix_softmax(&scores, &soft_scores, 0);
+
+ //allocate memory for output data
+ Matrix_alloc(out, input->rows, input->cols);
+  //residual connection 
+  if(residual_connection!=1){
+
+    Matrix_mul(&soft_scores, &V, out);
+    out->rows = input->rows;
+    out->cols = input->cols;
+
+  }
+  else{
+    Matrix out1; 
+    Matrix_alloc(&out1, input->rows, input->cols);
+   //soft_scores.V -> gives actual input shape
+    Matrix_mul(&soft_scores, &V, &out1);
+    out1.rows = input->rows;
+    out1.cols = input->cols;
+   
+    Matrix_addition(&out1, input, out);
+    out->rows = input->rows;
+    out->cols = input->cols;
+    Matrix_free(&out1); 
+
+  }
+  //free up the stack memory of intermediate Matrices not required
+  //
+  //Matrix Q,K,V, K_transpose, scores, soft_scores;
+  Matrix_free(&Q); Matrix_free(&K); Matrix_free(&V); Matrix_free(&K_transpose); Matrix_free(&scores); Matrix_free(&soft_scores);
+
+  return out;
 }
 //main function 
 int main(){
-
+  
+  Matrix M;
+  Matrix_create_random(&M, 5,5);
+  Matrix_print(&M);
+  
   return 0;
 
 }
