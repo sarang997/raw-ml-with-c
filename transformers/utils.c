@@ -98,12 +98,12 @@ int Matrix_softmax(Matrix *A, Matrix *out, int axis){
   out->rows = A->rows;
   out->cols = A->cols;
   return 1;
-}
-if(axis==1){
-//TODO
-  return 1;
-}
-return 0;
+  }
+  if(axis==1){
+  //TODO
+    return 1;
+  }
+  return 0;
 }
 
 int Matrix_mul_scalar(Matrix *A, Matrix *out, float s){
@@ -193,21 +193,50 @@ void Matrix_free(Matrix *M){
   M->rows=0;
   M->cols=0;
   }
+  
+int LayerNorm(Matrix *M, int d_model){
+  if(M==NULL || M->data==NULL) return 0;
+  if(M->rows <=0 || M->cols<=0) return 0; 
 
+  //take each row: fins mean and variance then normaize each value
+  for(int i=0; i<M->rows; i++){
+  
+    //mean
+    float mean = 0.0f;
+    float variance = 0.0f; 
+    for(int j=0; j<d_model; j++){
+      mean+=M->data[i*M->cols+j];
+    }
+    mean /= d_model;
+
+    //variance
+    for(int k=0; k<d_model; k++){
+      float diff = M->data[i*M->cols+k] - mean; 
+      variance += diff*diff;
+    }
+    variance /=d_model;
+  
+    //standardise
+    float eps = 1e-5f;
+    float inv_std = 1.0f / sqrtf(variance+eps);
+    for(int i=0; i<d_model; i++){
+      float x = M->data[i*d_model+i];
+      M->data[i*d_model+i] = (x-mean) * inv_std;
+    }
+  }
+  return 1; 
+}
 //ATTENTION FORWARD
 Matrix *single_head_attention_forward(Matrix *input, int d_model, int residual_connection, Matrix *out){
-  printf("input\n");
-  Matrix_print(input);
   int d_k = input->cols;
+
   //create weights for Q, K, V
   Matrix Q_W, K_W, V_W;
   Matrix_create_random(&Q_W, d_model, d_model);
   Matrix_create_random(&K_W, d_model, d_model);
   Matrix_create_random(&V_W, d_model, d_model);
   printf("created weights\n");
-  Matrix_print(&Q_W);
-  Matrix_print(&K_W);
-  Matrix_print(&V_W);
+
   //create Q,K,V and allocate space
   Matrix Q,K,V, K_transpose, scores, soft_scores;
   Matrix_alloc(&Q, input->rows, d_k);
@@ -220,7 +249,6 @@ Matrix *single_head_attention_forward(Matrix *input, int d_model, int residual_c
   Matrix_mul(input, &V_W, &V);
 
   printf("calculated Q,K,V\n");
-  Matrix_print(&Q);
 
  //scores = Q.K^T
   Matrix_alloc(&K_transpose, K.cols, K.rows);
@@ -229,6 +257,9 @@ Matrix *single_head_attention_forward(Matrix *input, int d_model, int residual_c
   Matrix_alloc(&scores, Q.rows, K_transpose.cols);
   Matrix_mul(&Q, &K_transpose, &scores);
 
+  //divide scores by sqrt(d_k)
+  float scale = 1.0f / sqrtf((float)d_k);
+  Matrix_mul_scalar(&scores, &scores, scale);
   printf("calculated scores\n");
   //softmax
   Matrix_alloc(&soft_scores, scores.rows, scores.cols);
@@ -285,11 +316,11 @@ int main(){
   //testing the forward attention block 
   int d_model = 72; //embedding dimension 
   Matrix input, out;
-  Matrix_create_random(&input, 256, 72);
+  Matrix_create_random(&input, 12, 72);
   
   single_head_attention_forward(&input, d_model, 1, &out);
   printf("final output!! \n");
-  Matrix_print(&out);
+  Matrix_free(&out); Matrix_free(&input);
   return 0;
 
 }
