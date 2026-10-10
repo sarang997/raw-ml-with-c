@@ -39,7 +39,7 @@ int Matrix_transpose(Matrix *A, Matrix *out){
   for(int i=0; i<A->rows; i++){
     for(int j=0; j<A->cols; j++){
 
-        out->data[j*out->cols+i] = A->data[i*A->cols+j];      
+        out->data[j*A->rows+i] = A->data[i*A->cols+j];      
     }
 
   }
@@ -143,8 +143,8 @@ int Matrix_create_random(Matrix *M, int rows, int cols){
   if (M->data==NULL) return 0; //malloc assignment failure
                                //
   for(int i=0; i<rows*cols; i++){
-    float random_0_to_1 = (float)rand() / (float)RAND_MAX;
-    M->data[i] = (random_0_to_1*0.2f) / -0.1f;
+    float random_val = ((float)rand() / (float)RAND_MAX) *0.2f -0.1f;
+    M->data[i] = random_val;
   }
   return 1;
 }
@@ -180,6 +180,7 @@ int Matrix_print(Matrix *M){
     }
     printf("\n");
   }
+    printf("\n");
   return 1; 
 }
 
@@ -195,38 +196,47 @@ void Matrix_free(Matrix *M){
 
 //ATTENTION FORWARD
 Matrix *single_head_attention_forward(Matrix *input, int d_model, int residual_connection, Matrix *out){
-  
+  printf("input\n");
+  Matrix_print(input);
   int d_k = input->cols;
   //create weights for Q, K, V
   Matrix Q_W, K_W, V_W;
   Matrix_create_random(&Q_W, d_model, d_model);
   Matrix_create_random(&K_W, d_model, d_model);
   Matrix_create_random(&V_W, d_model, d_model);
-
+  printf("created weights\n");
+  Matrix_print(&Q_W);
+  Matrix_print(&K_W);
+  Matrix_print(&V_W);
   //create Q,K,V and allocate space
   Matrix Q,K,V, K_transpose, scores, soft_scores;
-  Matrix_alloc(&Q, d_k, d_k);
-  Matrix_alloc(&K, d_k, d_k);
-  Matrix_alloc(&V, d_k, d_k);
+  Matrix_alloc(&Q, input->rows, d_k);
+  Matrix_alloc(&K, input->rows, d_k);
+  Matrix_alloc(&V, input->rows, d_k);
 
   //calculate Q,K,V
   Matrix_mul(input, &Q_W, &Q);
   Matrix_mul(input, &K_W, &K);
   Matrix_mul(input, &V_W, &V);
 
+  printf("calculated Q,K,V\n");
+  Matrix_print(&Q);
+
  //scores = Q.K^T
-  Matrix_alloc(&K_transpose, K.rows, K.cols);
+  Matrix_alloc(&K_transpose, K.cols, K.rows);
   Matrix_transpose(&K, &K_transpose);
 
   Matrix_alloc(&scores, Q.rows, K_transpose.cols);
   Matrix_mul(&Q, &K_transpose, &scores);
 
- //softmax
- Matrix_alloc(&soft_scores, scores.rows, scores.cols);
- Matrix_softmax(&scores, &soft_scores, 0);
+  printf("calculated scores\n");
+  //softmax
+  Matrix_alloc(&soft_scores, scores.rows, scores.cols);
+  Matrix_softmax(&scores, &soft_scores, 0);
+  printf("calculated softmax scores\n");
 
- //allocate memory for output data
- Matrix_alloc(out, input->rows, input->cols);
+  //allocate memory for output data
+  Matrix_alloc(out, input->rows, input->cols);
   //residual connection 
   if(residual_connection!=1){
 
@@ -251,7 +261,8 @@ Matrix *single_head_attention_forward(Matrix *input, int d_model, int residual_c
   }
   //freee up heap for intermediate matrices
   Matrix_free(&Q); Matrix_free(&K); Matrix_free(&V); Matrix_free(&K_transpose); Matrix_free(&scores); Matrix_free(&soft_scores);
-
+  
+  printf("calculated out\n");
   return out;
 }
 //main function 
@@ -262,15 +273,23 @@ int main(){
   // Matrix_print(&M);
 
   //testing matrix mul 
-  Matrix A, B, mul_out;
-  Matrix_create_ones(&A, 5,4);
-  Matrix_create_ones(&B, 4,5);
-  Matrix_alloc(&mul_out, 5,5);
-  Matrix_mul(&A, &B, &mul_out); 
-  printf("returned value: %d", Matrix_mul(&A, &B, &mul_out));
+  //Matrix A, B, mul_out;
+  //Matrix_create_ones(&A, 5,4);
+  //Matrix_create_ones(&B, 4,5);
+  //Matrix_alloc(&mul_out, 5,5);
+  //Matrix_mul(&A, &B, &mul_out); 
+  //printf("returned value: %d", Matrix_mul(&A, &B, &mul_out));
   //free memory from heap
-  Matrix_free(&M); Matrix_free(&A); Matrix_free(&B); Matrix_free(&mul_out);
+  //Matrix_free(&M); Matrix_free(&A); Matrix_free(&B); Matrix_free(&mul_out);
   
+  //testing the forward attention block 
+  int d_model = 72; //embedding dimension 
+  Matrix input, out;
+  Matrix_create_random(&input, 256, 72);
+  
+  single_head_attention_forward(&input, d_model, 1, &out);
+  printf("final output!! \n");
+  Matrix_print(&out);
   return 0;
 
 }
