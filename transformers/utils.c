@@ -50,12 +50,21 @@ int Matrix_transpose(Matrix *A, Matrix *out){
 }
 
 int Matrix_mul(Matrix *A, Matrix *B, Matrix *out){
+    if(A==NULL || B==NULL || out==NULL) return 0;
+
     if(A->cols != B->rows) return 0; 
-    
-    for(int r; r<A->rows; r++){
-      for(int c; c<A->cols; c++){
-         //out->data[] = A->data[r*A->rows+c] * B->data[c*B->cols_r];
-      }
+
+    if(out->rows != A->rows || out->cols != B->cols) return 0;
+
+    for(int r=0; r<A->rows; r++){
+      for(int p=0; p<B->cols; p++){
+
+        float sum=0.0;
+        for(int c=0; c<A->cols; c++){
+           sum += A->data[r*A->cols+c] * B->data[c*B->cols+p];
+       }
+        out->data[r*out->cols+p]=sum;
+      } 
     }
     out->rows = A->rows;
     out->cols = B->cols;
@@ -110,6 +119,18 @@ out->cols = A->cols;
 
   return 1;
 }
+int Matrix_create_ones(Matrix *M, int rows, int cols){
+    if(rows<=0 || cols<=0) return 0;
+    M->rows = rows;
+    M->cols = cols; 
+    M->data = malloc(rows*cols*sizeof(float));
+    if(M->data == NULL) return 0; //memory allocation failure
+
+    for(int i=0; i<rows*cols; i++){
+      M->data[i] = 1;
+    }
+    return 1;
+}
 
 int Matrix_create_random(Matrix *M, int rows, int cols){
 
@@ -138,12 +159,14 @@ int create_Q_K_V_weights(Q_K_V_weights *weights, int d_model){
   return 1;
 }
 
-//Allocate heap memory
+//Allocate heap memory + plus rows and cols
 int Matrix_alloc(Matrix *M, int rows, int cols){
 
   if(M==NULL) return 0;
 
   M->data = malloc(rows*cols*sizeof(float));
+  M->rows = rows;
+  M->cols = cols;
   if(M->data==NULL) return 0;
 
   return 1;
@@ -226,9 +249,7 @@ Matrix *single_head_attention_forward(Matrix *input, int d_model, int residual_c
     Matrix_free(&out1); 
 
   }
-  //free up the stack memory of intermediate Matrices not required
-  //
-  //Matrix Q,K,V, K_transpose, scores, soft_scores;
+  //freee up heap for intermediate matrices
   Matrix_free(&Q); Matrix_free(&K); Matrix_free(&V); Matrix_free(&K_transpose); Matrix_free(&scores); Matrix_free(&soft_scores);
 
   return out;
@@ -238,7 +259,17 @@ int main(){
   
   Matrix M;
   Matrix_create_random(&M, 5,5);
-  Matrix_print(&M);
+  // Matrix_print(&M);
+
+  //testing matrix mul 
+  Matrix A, B, mul_out;
+  Matrix_create_ones(&A, 5,4);
+  Matrix_create_ones(&B, 4,5);
+  Matrix_alloc(&mul_out, 5,5);
+  Matrix_mul(&A, &B, &mul_out); 
+  printf("returned value: %d", Matrix_mul(&A, &B, &mul_out));
+  //free memory from heap
+  Matrix_free(&M); Matrix_free(&A); Matrix_free(&B); Matrix_free(&mul_out);
   
   return 0;
 
