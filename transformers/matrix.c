@@ -267,7 +267,12 @@ Matrix *single_head_attention_forward(Matrix *input, TransformerLayer *layer, La
   Matrix_alloc(&out1, input->rows, input->cols);
 
   //allocate memory for output in LayerCache
+  if(cache->out.rows == input->rows && cache->out.cols == input->cols){
+    printf("can use the same allocation");
+  }
+  else{
   Matrix_alloc(&cache->out, input->rows, input->cols);
+  }
   //residual connection 
   if(residual_connection!=1){
 
@@ -278,7 +283,7 @@ Matrix *single_head_attention_forward(Matrix *input, TransformerLayer *layer, La
 
   }
   else{
-       //soft_scores.V -> gives actual input shape
+    //soft_scores.V -> gives actual input shape
     Matrix_mul(&soft_scores, &V, &out1);
     out1.rows = input->rows;
     out1.cols = input->cols;
@@ -303,7 +308,7 @@ int main(){
   
   Matrix M;
   Matrix_create_random(&M, 5,5);
-  // Matrix_print(&M);
+  //Matrix_print(&M);
 
   //testing matrix mul 
   //Matrix A, B, mul_out;

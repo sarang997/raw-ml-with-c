@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include "matrix.h"
 
-
 void Transformer_free(TransformerModel *model){
   //free every layers Q K V weights 
   if(model == NULL || model->num_layers<=0) return; //already free
@@ -56,6 +55,7 @@ int Transformer_forward(TransformerModel *model, Matrix *input){
     }
     return 1; 
 }
+
 // MAIN FUNCTION
 int main(){
 
