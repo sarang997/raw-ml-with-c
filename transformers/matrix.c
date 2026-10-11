@@ -2,25 +2,62 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
+#include "matrix.h"
+//Allocate heap memory + plus rows and cols
+int Matrix_alloc(Matrix *M, int rows, int cols){
 
-//defining a Matrix struct 
-typedef struct{
-  int rows;
-  int cols;
-  float *data;
+  if(M==NULL) return 0;
 
-} Matrix;
+  M->data = malloc(rows*cols*sizeof(float));
+  M->rows = rows;
+  M->cols = cols;
+  if(M->data==NULL) return 0;
 
-typedef struct{
-  Matrix Q_W;
-  Matrix K_W;
-  Matrix V_W;
+  return 1;
+}
 
-} Q_K_V_weights;
+int Matrix_create_random(Matrix *M, int rows, int cols){
 
-//Utils Functions required for forward pass
+  if(rows<=0 || cols<=0) return 0;
+  if (M->data==NULL) return 0; //no memory assignment found
+  M->rows = rows;
+  M->cols = cols;
+  //allocation not needed here it should be done my separate func (better design) 
+  //M->data = malloc(rows*cols*sizeof(float));
+                               //
+  for(int i=0; i<rows*cols; i++){
+    float random_val = ((float)rand() / (float)RAND_MAX) *0.2f -0.1f;
+    M->data[i] = random_val;
+  }
+  return 1;
+}
+
+// INITIALIZE MODEL WEIGHTS
+int Transformer_initialize_weights(TransformerModel *model){
+
+  // loop through the layers 
+  // for each layer initialise its Q,K,V weights
+  int num_layers = model->num_layers;
+  int d_model = model->d_model;
+  
+  for(int i=0; i<num_layers ;i++){
+
+    // call matrix_alloc for each of the weights 
+    Matrix_alloc(&model->layers[i].attention.Q_W, d_model, d_model);
+    Matrix_alloc(&model->layers[i].attention.K_W, d_model, d_model);
+    Matrix_alloc(&model->layers[i].attention.V_W, d_model, d_model);
+
+    // create random weights 
+    Matrix_create_random(&model->layers[i].attention.Q_W, d_model, d_model);
+    Matrix_create_random(&model->layers[i].attention.K_W, d_model, d_model);
+    Matrix_create_random(&model->layers[i].attention.V_W, d_model, d_model);
+     
+  }
+  printf("Initialized weights for all layers \n");
+  return 1;
+}
 int Matrix_addition(Matrix *A, Matrix *B, Matrix *out){
- //checks
+ // checks
   if(A==NULL || B==NULL || out==NULL) return 0;
   if(A->rows != B->rows || A->cols !=B->cols) return 0;
 
@@ -131,49 +168,7 @@ int Matrix_create_ones(Matrix *M, int rows, int cols){
     }
     return 1;
 }
-
-int Matrix_create_random(Matrix *M, int rows, int cols){
-
-  if(rows<=0 || cols<=0) return 0;
-
-  M->rows = rows;
-  M->cols = cols;
-  
-  M->data = malloc(rows*cols*sizeof(float));
-  if (M->data==NULL) return 0; //malloc assignment failure
-                               //
-  for(int i=0; i<rows*cols; i++){
-    float random_val = ((float)rand() / (float)RAND_MAX) *0.2f -0.1f;
-    M->data[i] = random_val;
-  }
-  return 1;
-}
-//for now create the random numbers needed for the transformer
-int create_Q_K_V_weights(Q_K_V_weights *weights, int d_model){
-  if(weights==NULL) return 0;
-
-  Matrix_create_random(&weights->Q_W, d_model, d_model);
-  Matrix_create_random(&weights->K_W, d_model, d_model);
-  Matrix_create_random(&weights->V_W, d_model, d_model);
-    
-  return 1;
-}
-
-//Allocate heap memory + plus rows and cols
-int Matrix_alloc(Matrix *M, int rows, int cols){
-
-  if(M==NULL) return 0;
-
-  M->data = malloc(rows*cols*sizeof(float));
-  M->rows = rows;
-  M->cols = cols;
-  if(M->data==NULL) return 0;
-
-  return 1;
-}
-
 int Matrix_print(Matrix *M){
-
   for(int i=0; i<M->rows; i++){
     for(int j=0; j<M->cols; j++){
       printf("%f ", M->data[i*M->cols+j]);
@@ -194,11 +189,13 @@ void Matrix_free(Matrix *M){
   M->cols=0;
   }
   
-int LayerNorm(Matrix *M, int d_model){
+int LayerNorm(Matrix *M, int d_model, Matrix *out){
   if(M==NULL || M->data==NULL) return 0;
   if(M->rows <=0 || M->cols<=0) return 0; 
-
+  if(d_model<=0 || M->cols !=d_model) return 0;
   //take each row: fins mean and variance then normaize each value
+  
+  float eps = 1e-5f;
   for(int i=0; i<M->rows; i++){
   
     //mean
@@ -217,25 +214,24 @@ int LayerNorm(Matrix *M, int d_model){
     variance /=d_model;
   
     //standardise
-    float eps = 1e-5f;
     float inv_std = 1.0f / sqrtf(variance+eps);
-    for(int i=0; i<d_model; i++){
-      float x = M->data[i*d_model+i];
-      M->data[i*d_model+i] = (x-mean) * inv_std;
+    for(int j=0; j<d_model; j++){
+      float x = M->data[i*d_model+j];
+      out->data[i*d_model+j] = (x-mean) * inv_std;
     }
   }
   return 1; 
 }
 //ATTENTION FORWARD
-Matrix *single_head_attention_forward(Matrix *input, int d_model, int residual_connection, Matrix *out){
+Matrix *single_head_attention_forward(Matrix *input, TransformerLayer *layer, LayerCache *cache, int d_model, int residual_connection){
   int d_k = input->cols;
 
   //create weights for Q, K, V
-  Matrix Q_W, K_W, V_W;
-  Matrix_create_random(&Q_W, d_model, d_model);
-  Matrix_create_random(&K_W, d_model, d_model);
-  Matrix_create_random(&V_W, d_model, d_model);
-  printf("created weights\n");
+  //Matrix Q_W, K_W, V_W;
+  //Matrix_create_random(&Q_W, d_model, d_model);
+  //Matrix_create_random(&K_W, d_model, d_model);
+  //Matrix_create_random(&V_W, d_model, d_model);
+  //printf("created weights\n");
 
   //create Q,K,V and allocate space
   Matrix Q,K,V, K_transpose, scores, soft_scores;
@@ -244,9 +240,9 @@ Matrix *single_head_attention_forward(Matrix *input, int d_model, int residual_c
   Matrix_alloc(&V, input->rows, d_k);
 
   //calculate Q,K,V
-  Matrix_mul(input, &Q_W, &Q);
-  Matrix_mul(input, &K_W, &K);
-  Matrix_mul(input, &V_W, &V);
+  Matrix_mul(input, &layer->attention.Q_W, &Q);
+  Matrix_mul(input, &layer->attention.K_W, &K);
+  Matrix_mul(input, &layer->attention.V_W, &V);
 
   printf("calculated Q,K,V\n");
 
@@ -265,37 +261,43 @@ Matrix *single_head_attention_forward(Matrix *input, int d_model, int residual_c
   Matrix_alloc(&soft_scores, scores.rows, scores.cols);
   Matrix_softmax(&scores, &soft_scores, 0);
   printf("calculated softmax scores\n");
+  
+  //layer normalization
+  Matrix out1; 
+  Matrix_alloc(&out1, input->rows, input->cols);
 
-  //allocate memory for output data
-  Matrix_alloc(out, input->rows, input->cols);
+  //allocate memory for output in LayerCache
+  Matrix_alloc(&cache->out, input->rows, input->cols);
   //residual connection 
   if(residual_connection!=1){
 
-    Matrix_mul(&soft_scores, &V, out);
-    out->rows = input->rows;
-    out->cols = input->cols;
+    Matrix_mul(&soft_scores, &V, &out1);
+    LayerNorm(&out1, d_model, &cache->out);
+    cache->out.rows = input->rows;
+    cache->out.cols = input->cols;
 
   }
   else{
-    Matrix out1; 
-    Matrix_alloc(&out1, input->rows, input->cols);
-   //soft_scores.V -> gives actual input shape
+       //soft_scores.V -> gives actual input shape
     Matrix_mul(&soft_scores, &V, &out1);
     out1.rows = input->rows;
     out1.cols = input->cols;
    
-    Matrix_addition(&out1, input, out);
-    out->rows = input->rows;
-    out->cols = input->cols;
-    Matrix_free(&out1); 
+    Matrix_addition(&out1, input, &out1);
+    LayerNorm(&out1, d_model, &cache->out);
+    cache->out.rows = input->rows;
+    cache->out.cols = input->cols;
 
   }
   //freee up heap for intermediate matrices
-  Matrix_free(&Q); Matrix_free(&K); Matrix_free(&V); Matrix_free(&K_transpose); Matrix_free(&scores); Matrix_free(&soft_scores);
+  Matrix_free(&Q); Matrix_free(&K); Matrix_free(&V); Matrix_free(&K_transpose); Matrix_free(&scores); Matrix_free(&soft_scores); Matrix_free(&out1); 
   
   printf("calculated out\n");
-  return out;
+  Matrix_print(&cache->out);
+  return &cache->out;
 }
+
+#ifdef MATRIX_TEST
 //main function 
 int main(){
   
@@ -317,10 +319,24 @@ int main(){
   int d_model = 72; //embedding dimension 
   Matrix input, out;
   Matrix_create_random(&input, 12, 72);
+    
+  //single_head_attention_forward(&input, d_model, 1, &out);
+  //printf("final output!! \n");
+  //Matrix_free(&out); Matrix_free(&input);
   
-  single_head_attention_forward(&input, d_model, 1, &out);
-  printf("final output!! \n");
-  Matrix_free(&out); Matrix_free(&input);
+  // CREATE MODEL 
+  // TransformerModel model;
+  // model.num_layers = 3;
+  // model.d_model = 4;
+
+  // assign layer heap memory and initialize weights.
+  // model.layers = malloc(model.num_layers * sizeof(TransformerLayer)); 
+  // Transformer_initialize_weights(&model);
+
+  //print few weight matrices
+  // Matrix_print(&model.layers[2].attention.Q_W);
   return 0;
 
 }
+
+#endif
