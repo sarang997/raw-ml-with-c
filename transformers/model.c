@@ -2,6 +2,36 @@
 #include <stdlib.h>
 #include "matrix.h"
 
+
+void Transformer_free(TransformerModel *model){
+  //free every layers Q K V weights 
+  if(model == NULL || model->num_layers<=0) return; //already free
+              
+  int num_layers = model->num_layers;
+    if(model->layers != NULL){
+        for(int i=0; i<num_layers; i++){
+          // freeing attention weights memory
+          free(model->layers[i].attention.Q_W.data);
+          free(model->layers[i].attention.K_W.data);
+          free(model->layers[i].attention.V_W.data);
+          }
+          free(model->layers);
+    }
+    if(model->forwardCache != NULL){
+      //free things related to forward cache
+        if(model->forwardCache->layerCaches !=NULL){      
+          for(int i=0; i<num_layers; i++){
+              free(model->forwardCache->layerCaches[i].out.data);
+          }
+          free(model->forwardCache->layerCaches);
+        }
+
+        free(model->forwardCache);
+    }
+
+    return;
+  }
+
 TransformerModel *create_transformer_model(int num_layers, int d_model){
  
     TransformerModel *model = malloc(sizeof(TransformerModel)); 
@@ -36,6 +66,7 @@ int main(){
   
   Transformer_forward(model, &input);
   printf("FORWARD DONE!!");
-  Matrix_print(&model->forwardCache->layerCaches[0].out);
+  Transformer_free(model);
+ // Matrix_print(&model->forwardCache->layerCaches[0].out);
   return 0;
 }
